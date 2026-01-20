@@ -1,31 +1,74 @@
-#\!/bin/bash
-echo ""
-echo -e "\033[0;35m════════════════════════════════════════════════════════════════\033[0m"
-echo -e "\033[0;35m                    📰 RSS TO MQTT STATUS 📰                     \033[0m"
-echo -e "\033[0;35m════════════════════════════════════════════════════════════════\033[0m"
+#!/bin/bash
 
-if systemctl is-active --quiet rss-mqtt; then
-    echo -e "\033[0;32m✓ RSS-to-MQTT Publisher is running\033[0m"
-    UPTIME=$(systemctl show rss-mqtt --property=ActiveEnterTimestamp --value)
-    if [[ -n "$UPTIME" ]]; then
-        UPTIME_FORMATTED=$(date -d "$UPTIME" +'%Y-%m-%d %H:%M:%S')
-        echo -e "\033[0;34m  Started: $UPTIME_FORMATTED\033[0m"
-    fi
+echo -e "\n=== RSS to MQTT Publisher Status ==="
+echo ""
+
+# Service status
+if systemctl is-active --quiet rss-mqtt.service; then
+    echo -e "Service: \033[0;32mRunning\033[0m"
+    uptime=$(systemctl show rss-mqtt.service --property=ActiveEnterTimestamp --value)
+    echo "Started: $uptime"
 else
-    echo -e "\033[0;31m✗ RSS-to-MQTT Publisher is not running\033[0m"
-    echo -e "\033[0;33m  Use 'sudo systemctl start rss-mqtt' to start\033[0m"
+    echo -e "Service: \033[0;31mStopped\033[0m"
 fi
 
 echo ""
-echo -e "\033[0;36mMQTT Topics:\033[0m"
-echo -e "\033[0;34m  news/headline  - Article headlines (plain text)\033[0m"
-echo -e "\033[0;34m  news/content   - Article content (plain text)\033[0m"
-echo -e "\033[0;34m  news/source    - Feed name and category\033[0m"
-echo -e "\033[0;34m  news/link      - Article URL\033[0m"
-echo -e "\033[0;34m  news/publish   - Publication date\033[0m"
-echo -e "\033[0;34m  today/time     - Current time (HH:MM, updates every minute)\033[0m"
+echo "=== MQTT Topics ==="
+echo ""
+
+# News topics (all retained)
+echo -e "\033[1;36mNews Topics (all retained):\033[0m"
+echo "  news/headline  - Article headline"
+echo "  news/content   - Article content (plain text)"
+echo "  news/source    - Feed name"
+echo "  news/link      - Article URL"
+echo "  news/publish   - Publication date"
 
 echo ""
-echo -e "\033[0;36mSubscribed Feeds: $(grep -E "^https?://" ~/.newsboat/urls 2>/dev/null | wc -l)\033[0m"
-echo -e "\033[0;35m════════════════════════════════════════════════════════════════\033[0m"
+
+# Time topics
+echo -e "\033[1;36mTime Topics:\033[0m"
+echo "  today/time     - HH:MM format (retained, updates every minute)"
+echo "  today/seconds  - SS format (NOT retained, updates every second)"
+
+echo ""
+
+# Date topics (all retained, Slovak)
+echo -e "\033[1;36mDate Topics (all retained, Slovak):\033[0m"
+echo "  today/dow      - Day of week (pondelok, utorok, streda...)"
+echo "  today/sdate    - Short date (D.M.YYYY format, e.g. 20.1.2026)"
+echo "  today/ldate    - Long date (D. month format, e.g. 20. januara)"
+echo "  today/year     - Year (YYYY format)"
+echo "  today/nameday  - Slovak nameday for current date"
+
+echo ""
+echo "=== Current Values ==="
+echo ""
+
+# Show current time/date values
+time_val=$(timeout 1 mosquitto_sub -h localhost -t 'today/time' -C 1 2>/dev/null)
+sec_val=$(timeout 1 mosquitto_sub -h localhost -t 'today/seconds' -C 1 2>/dev/null)
+dow_val=$(timeout 1 mosquitto_sub -h localhost -t 'today/dow' -C 1 2>/dev/null)
+sdate_val=$(timeout 1 mosquitto_sub -h localhost -t 'today/sdate' -C 1 2>/dev/null)
+ldate_val=$(timeout 1 mosquitto_sub -h localhost -t 'today/ldate' -C 1 2>/dev/null)
+year_val=$(timeout 1 mosquitto_sub -h localhost -t 'today/year' -C 1 2>/dev/null)
+nameday_val=$(timeout 1 mosquitto_sub -h localhost -t 'today/nameday' -C 1 2>/dev/null)
+
+echo "Time: $time_val:$sec_val"
+echo "Date: $dow_val, $sdate_val ($ldate_val)"
+echo "Year: $year_val"
+echo "Nameday: $nameday_val"
+
+echo ""
+
+# Show latest news
+headline=$(timeout 1 mosquitto_sub -h localhost -t 'news/headline' -C 1 2>/dev/null)
+source=$(timeout 1 mosquitto_sub -h localhost -t 'news/source' -C 1 2>/dev/null)
+
+if [ -n "$headline" ]; then
+    echo "=== Latest News ==="
+    echo "Source: $source"
+    echo "Headline: $headline"
+fi
+
 echo ""

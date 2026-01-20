@@ -13,18 +13,31 @@ Automated RSS feed aggregator that publishes news articles to MQTT topics in rea
 - 🚀 Auto-starts on boot via systemd
 - 🧹 Clean ASCII text (no HTML, no diacritics)
 - 📝 Easy feed management commands
-- ⏰ Real-time clock updates every minute (today/time topic)
+- ⏰ Real-time clock with seconds precision
+- 📅 Slovak date and nameday calendar
+- 🌍 Automatic timezone handling
 
 ## MQTT Topics
 
-All messages are published as plain text with retain flag:
+All messages are published as plain text.
 
+### News Topics (Retained)
 - `news/headline` - Article headline
 - `news/content` - Article content (max 500 chars)
-- `news/source` - Feed name and category
-- `news/link` - Article URL  
+- `news/source` - Feed name (e.g., "TechCrunch", "BBC World")
+- `news/link` - Article URL
 - `news/publish` - Publication date/time
-- `today/time` - Current time (HH:MM format, updates every minute)
+
+### Time Topics
+- `today/time` - Current time (HH:MM format, updates every minute) - **Retained**
+- `today/seconds` - Current seconds (SS format, updates every second) - **Not retained**
+
+### Date Topics (Retained)
+- `today/dow` - Slovak day of week (e.g., "pondelok", "utorok", "streda")
+- `today/sdate` - Short date (D.M.YYYY format, e.g., "20.1.2026")
+- `today/ldate` - Long date (D. month format, e.g., "20. januara")
+- `today/year` - Current year (YYYY format, e.g., "2026")
+- `today/nameday` - Slovak name day (e.g., "Dalibor", "Novy rok")
 
 ## Requirements
 
@@ -81,6 +94,15 @@ mosquitto_sub -h localhost -t "news/#" -v
 
 # Subscribe to headlines only
 mosquitto_sub -h localhost -t "news/headline" -v
+
+# Subscribe to all time topics
+mosquitto_sub -h localhost -t "today/#" -v
+
+# Subscribe to time updates (HH:MM every minute)
+mosquitto_sub -h localhost -t "today/time" -v
+
+# Subscribe to seconds (updates every second)
+mosquitto_sub -h localhost -t "today/seconds" -v
 ```
 
 ## Default RSS Feeds
@@ -105,6 +127,16 @@ Edit `feeds.txt` to customize RSS feeds, then:
 cp feeds.txt ~/.newsboat/urls
 sudo systemctl restart rss-mqtt
 ```
+
+## Slovak Calendar Features
+
+The publisher includes full Slovak calendar support:
+
+- **Day names**: pondelok, utorok, streda, stvrtok, piatok, sobota, nedela
+- **Month names**: januara, februara, marca... (genitive case, no diacritics)
+- **Name days**: 366 Slovak name days (including leap year)
+- **Special days**: "Novy rok", "Sviatok prace", "1.sviatok vianocny", etc.
+- **All text**: No diacritics (ASCII compatible)
 
 ## File Structure
 
