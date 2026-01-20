@@ -85,22 +85,39 @@ Updates every 6 seconds, rotating through 8 feeds:
 
 ### Calendar Topics (all retained)
 
-Updates every 5 minutes:
+Calendar fetched every 5 minutes, time-sensitive topics update every minute:
 
 **Next Event:**
 - `calendar/next/title` - Event title
 - `calendar/next/start` - Start time (DD.MM.YYYY HH:MM)
 - `calendar/next/end` - End time
 - `calendar/next/location` - Event location
-- `calendar/next/description` - Event description (first 500 chars)
-- `calendar/next/time_until` - Time until event (e.g., "45 min", "2 hod", "3 dni")
+- `calendar/next/description` - Event description (max 700 chars, multi-line, unescaped)
+- `calendar/next/time_until` - Smart time display (updates every minute):
+  - Ongoing events: "over in 15m", "over in 1h 20m"
+  - Today <2h: "in 45m", "in 1h 30m"
+  - Today 2+h: "in 3h", "in 5h"
+  - Tomorrow: "tomorrow" or "09:30 tomorrow" (if before 11am)
+  - Future: "on Monday" or "15:00 on Thursday" (if before 11am)
+- `calendar/appt` - Combined title + time_until (e.g., "Team Meeting in 2h")
 
 **Today's Schedule:**
 - `calendar/today/count` - Number of events today
-- `calendar/today/list` - Newline-separated list of today's events
+- `calendar/today/list` - Time-formatted list (e.g., "17:15-18:15  Meeting Name")
+
+**Tomorrow's Schedule:**
+- `calendar/tomorrow/count` - Number of events tomorrow
+- `calendar/tomorrow/list` - Time-formatted list (e.g., "09:00-10:30  Standup")
 
 **System:**
 - `calendar/status` - Connector status (running/error)
+
+**Živý obraz Integration:**
+
+All calendar topics are automatically pushed to Živý obraz API (https://in.zivyobraz.eu/):
+- Full update every 5 minutes (11 values)
+- Time-sensitive update every minute (2 values: time_until, appt)
+- Same parameter names as MQTT topics (next_title, next_start, etc.)
 
 ## Management Commands
 
@@ -197,6 +214,37 @@ The calendar uses CalDAV protocol (same as Fantastical, Week Calendar):
 - If not working, check logs: `sudo journalctl -u gcal-mqtt.service -n 50`
 - Verify app password hasn't expired
 - Ensure 2-Step Verification is enabled on Google account
+
+### Živý obraz API Integration
+
+The calendar connector automatically pushes all calendar data to Živý obraz portal for external display.
+
+**Configuration:**
+- API endpoint: `https://in.zivyobraz.eu/`
+- Import key: Configured in `gcal_mqtt_connector.py`
+- No additional setup required
+
+**Push Schedule:**
+- Full calendar update: Every 5 minutes (11 values)
+- Time-sensitive update: Every minute (2 values)
+
+**Pushed Values:**
+- `next_title`, `next_start`, `next_end`, `next_location`, `next_description`
+- `next_time_until`, `appt`
+- `today_count`, `today_list`
+- `tomorrow_count`, `tomorrow_list`
+
+**Monitoring:**
+Check service logs for API push confirmation:
+```bash
+sudo journalctl -u gcal-mqtt.service -f | grep "Pushed"
+```
+
+Example output:
+```
+[2026-01-20 21:23:24] Pushed 11 values to Živý obraz
+[2026-01-20 21:24:00] Pushed 2 values to Živý obraz
+```
 
 ## File Locations
 
