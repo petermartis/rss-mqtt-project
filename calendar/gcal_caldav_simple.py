@@ -49,6 +49,9 @@ def push_to_zivyobraz(data):
     try:
         params = {'import_key': ZIVYOBRAZ_IMPORT_KEY}
         params.update(data)
+        # Log what we're sending
+        if 'next_title' in data:
+            log(f"Pushing next_title='{data['next_title']}'")
         response = requests.get(ZIVYOBRAZ_API_URL, params=params, timeout=5)
         if response.status_code == 200:
             log(f"Pushed {len(data)} values to Živý obraz")
@@ -292,9 +295,9 @@ def publish_events(client, all_events):
     client.publish(MQTT_TOPIC_TODAY_COUNT, str(len(today_events)), retain=True)
 
     today_list = []
-    for event in today_events:
-        time_range = format_time_range(event.get('dtstart'), event.get('dtend'))
-        today_list.append(f"{time_range}  {event.get('summary', '')}")
+    for today_event in today_events:
+        time_range = format_time_range(today_event.get('dtstart'), today_event.get('dtend'))
+        today_list.append(f"{time_range}  {today_event.get('summary', '')}")
 
     client.publish(MQTT_TOPIC_TODAY_LIST, '\n'.join(today_list) if today_list else "No appointments", retain=True)
     log(f"Published {len(today_events)} events for today")
@@ -307,9 +310,9 @@ def publish_events(client, all_events):
     client.publish(MQTT_TOPIC_TOMORROW_COUNT, str(len(tomorrow_events)), retain=True)
 
     tomorrow_list = []
-    for event in tomorrow_events:
-        time_range = format_time_range(event.get('dtstart'), event.get('dtend'))
-        tomorrow_list.append(f"{time_range}  {event.get('summary', '')}")
+    for tomorrow_event in tomorrow_events:
+        time_range = format_time_range(tomorrow_event.get('dtstart'), tomorrow_event.get('dtend'))
+        tomorrow_list.append(f"{time_range}  {tomorrow_event.get('summary', '')}")
 
     client.publish(MQTT_TOPIC_TOMORROW_LIST, '\n'.join(tomorrow_list) if tomorrow_list else "No appointments", retain=True)
     log(f"Published {len(tomorrow_events)} events for tomorrow")
