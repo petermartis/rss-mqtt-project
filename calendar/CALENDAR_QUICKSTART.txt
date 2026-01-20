@@ -1,0 +1,116 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║        Google Calendar MQTT Connector - Quick Start Guide                ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+✓ INSTALLATION COMPLETE
+
+The Google Calendar connector is now installed on your Raspberry Pi.
+It will publish your Google Workspace calendar events to MQTT topics.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 NEXT STEPS TO ACTIVATE:
+
+1. CREATE GOOGLE CLOUD PROJECT
+   • Go to: https://console.cloud.google.com/
+   • Create new project or select existing
+   • Enable "Google Calendar API"
+
+2. CREATE OAUTH CREDENTIALS
+   • Go to: APIs & Services > Credentials
+   • Create OAuth client ID
+   • Type: Desktop app
+   • Download JSON file
+
+3. INSTALL CREDENTIALS
+   • Transfer downloaded JSON to Raspberry Pi
+   • Save as: /home/admin/gcal_credentials.json
+
+   Example:
+   scp client_secret_xxx.json admin@192.168.3.11:~/gcal_credentials.json
+
+4. AUTHENTICATE
+   ssh admin@192.168.3.11
+   gcal_authenticate
+
+   (This will open browser for Google OAuth)
+
+5. START SERVICE
+   sudo systemctl start gcal-mqtt.service
+   sudo systemctl enable gcal-mqtt.service
+
+6. VERIFY
+   gcal_status
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📡 MQTT TOPICS (all retained):
+
+Next Event:
+  calendar/next/title       - Event title
+  calendar/next/start       - Start time (DD.MM.YYYY HH:MM)
+  calendar/next/end         - End time
+  calendar/next/location    - Location
+  calendar/next/description - Description
+  calendar/next/attendees   - Attendees list
+  calendar/next/time_until  - Time until event (45 min, 2 hod, 3 dni)
+
+Today's Schedule:
+  calendar/today/count      - Number of events today
+  calendar/today/list       - List of today's events
+
+Status:
+  calendar/status           - running/error/authentication_required
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚙️  COMMANDS:
+
+  gcal_status              Show calendar status and next event
+  gcal_authenticate        Run OAuth setup (one-time)
+
+  sudo systemctl start gcal-mqtt.service     Start connector
+  sudo systemctl stop gcal-mqtt.service      Stop connector
+  sudo systemctl restart gcal-mqtt.service   Restart connector
+  sudo systemctl status gcal-mqtt.service    Check service status
+
+  sudo journalctl -u gcal-mqtt.service -f    View live logs
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🧪 TESTING:
+
+  # Subscribe to all calendar topics
+  mosquitto_sub -h localhost -t 'calendar/#' -v
+
+  # Check next event
+  mosquitto_sub -h localhost -t 'calendar/next/title' -C 1
+
+  # Check today's events
+  mosquitto_sub -h localhost -t 'calendar/today/list' -C 1
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📚 DOCUMENTATION:
+
+  Full setup guide: ~/rss-mqtt-project/calendar/GCAL_SETUP.md
+  GitHub: https://github.com/petermartis/rss-mqtt-project
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔒 SECURITY:
+
+  ✓ OAuth2 authentication (industry standard)
+  ✓ Readonly calendar access only
+  ✓ No data sent outside local network
+  ✓ Token auto-refresh
+  ✓ Works with Google Workspace (G Suite)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⏱️  UPDATE FREQUENCY:
+
+  Calendar events update every 5 minutes
+  Well within Google API free tier (10,000 requests/day)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
