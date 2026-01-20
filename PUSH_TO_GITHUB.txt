@@ -22,7 +22,7 @@ STEP 2: Create Private Repository on GitHub
 
 STEP 3: Push to GitHub
 ═══════════════════════════════════════════════════════════════
-git remote add origin https://github.com/YOUR_USERNAME/rss-mqtt-publisher.git
+git remote add origin https://github.com/petermartis/rss-mqtt-publisher.git
 git branch -M main
 git push -u origin main
 
@@ -30,13 +30,13 @@ git push -u origin main
 
 STEP 4: Verify
 ═══════════════════════════════════════════════════════════════
-Visit: https://github.com/YOUR_USERNAME/rss-mqtt-publisher
+Visit: https://github.com/petermartis/rss-mqtt-publisher
 
 ✓ You should see all 15 files uploaded!
 
 FUTURE: Clone on Another Raspberry Pi
 ═══════════════════════════════════════════════════════════════
-git clone https://github.com/YOUR_USERNAME/rss-mqtt-publisher.git
+git clone https://github.com/petermartis/rss-mqtt-publisher.git
 cd rss-mqtt-publisher
 chmod +x install.sh
 sudo ./install.sh

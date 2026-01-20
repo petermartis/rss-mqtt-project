@@ -2,8 +2,6 @@
 
 Automated RSS feed aggregator that publishes news articles to MQTT topics in real-time. Perfect for Raspberry Pi and IoT projects.
 
-**Repository:** https://github.com/petermartis/rss-mqtt-project
-
 ## Features
 
 - 📰 Monitors 8 RSS feeds (5 Tech + 3 International News)
@@ -35,8 +33,8 @@ All messages are published as plain text with retain flag:
 
 ```bash
 # Clone the repository
-git clone https://github.com/petermartis/rss-mqtt-project.git
-cd rss-mqtt-project
+git clone https://github.com/YOUR_USERNAME/rss-mqtt-publisher.git
+cd rss-mqtt-publisher
 
 # Run installation script
 chmod +x install.sh
@@ -107,7 +105,7 @@ sudo systemctl restart rss-mqtt
 ## File Structure
 
 ```
-rss-mqtt-project/
+rss-mqtt-publisher/
 ├── README.md                  # This file
 ├── INSTALL.md                 # Detailed installation guide
 ├── install.sh                 # Automated installation script
@@ -145,35 +143,6 @@ rss_channels
 ```bash
 # After adding feeds, restart the service
 sudo systemctl restart rss-mqtt
-```
-
-## Backup & Restore
-
-### Create Backup
-All project files are version controlled in this GitHub repository. To backup current configuration:
-
-```bash
-cd ~/rss-mqtt-project
-cp ~/.newsboat/urls feeds.txt
-cp ~/rss_mqtt_publisher.py .
-git add .
-git commit -m "Backup: $(date +%Y-%m-%d)"
-git push
-```
-
-### Restore on New Raspberry Pi
-If your SD card fails or you upgrade your Raspberry Pi, restore everything with:
-
-```bash
-# Clone the repository
-git clone https://github.com/petermartis/rss-mqtt-project.git
-cd rss-mqtt-project
-
-# Run installation script (installs everything automatically)
-chmod +x install.sh
-sudo ./install.sh
-
-# Service starts automatically - ready in under 2 minutes!
 ```
 
 ## License

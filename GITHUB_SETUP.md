@@ -29,7 +29,7 @@ After creating the repository, GitHub will show you commands. Use these:
 cd ~/rss-mqtt-project
 
 # Add your repository as remote (replace YOUR_USERNAME)
-git remote add origin https://github.com/YOUR_USERNAME/rss-mqtt-publisher.git
+git remote add origin https://github.com/petermartis/rss-mqtt-project.git
 
 # Rename branch to main (if needed)
 git branch -M main
@@ -54,7 +54,7 @@ You'll need a Personal Access Token instead of password:
 
 Check your repository at:
 ```
-https://github.com/YOUR_USERNAME/rss-mqtt-publisher
+https://github.com/petermartis/rss-mqtt-project
 ```
 
 ## Future Updates
@@ -81,7 +81,7 @@ git push
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/rss-mqtt-publisher.git
+git clone https://github.com/petermartis/rss-mqtt-project.git
 cd rss-mqtt-publisher
 
 # Run installation
