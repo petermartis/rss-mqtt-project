@@ -14,12 +14,22 @@ fi
 
 echo ""
 
-# Check authentication
-if [ -f "/home/admin/.gcal_token.pickle" ]; then
-    echo -e "Authentication: \033[0;32mConfigured\033[0m"
+# Check authentication type
+if [ -f "/home/admin/.gcal_caldav_auth.json" ]; then
+    echo -e "Authentication: \033[0;32mCalDAV Configured\033[0m"
+    echo "Method: App Password (same as Fantastical, Week Calendar)"
+elif [ -f "/home/admin/.gcal_token.pickle" ]; then
+    echo -e "Authentication: \033[0;32mAPI Configured\033[0m"
+    echo "Method: OAuth2 API"
+elif [ -f "/home/admin/.gcal_ical_url.txt" ]; then
+    echo -e "Authentication: \033[0;32miCal Configured\033[0m"
+    echo "Method: iCal Feed"
 else
     echo -e "Authentication: \033[0;31mNot configured\033[0m"
-    echo "Run: gcal_authenticate"
+    echo ""
+    echo "Available setup methods:"
+    echo "  gcal_caldav_setup  - CalDAV (recommended - same as 3rd party apps)"
+    echo "  gcal_authenticate  - API (requires API enabled by IT)"
 fi
 
 echo ""
@@ -59,7 +69,6 @@ echo "  calendar/next/start       - Next event start time"
 echo "  calendar/next/end         - Next event end time"
 echo "  calendar/next/location    - Next event location"
 echo "  calendar/next/description - Next event description"
-echo "  calendar/next/attendees   - Next event attendees"
 echo "  calendar/next/time_until  - Time until next event"
 echo "  calendar/today/count      - Number of events today"
 echo "  calendar/today/list       - List of today's events"
