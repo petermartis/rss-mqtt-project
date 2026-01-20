@@ -26,7 +26,7 @@ All messages are published as plain text.
 - `news/content` - Article content (max 500 chars)
 - `news/source` - Feed name (e.g., "TechCrunch", "BBC World")
 - `news/link` - Article URL
-- `news/publish` - Publication date/time
+- `news/published` - Publication date/time
 
 ### Time Topics
 - `today/time` - Current time (HH:MM format, updates every minute) - **Retained**

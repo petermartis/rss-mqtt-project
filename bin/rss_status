@@ -22,7 +22,7 @@ echo "  news/headline  - Article headline"
 echo "  news/content   - Article content (plain text)"
 echo "  news/source    - Feed name"
 echo "  news/link      - Article URL"
-echo "  news/publish   - Publication date"
+echo "  news/published   - Publication date"
 
 echo ""
 
