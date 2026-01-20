@@ -1,29 +1,45 @@
-# RSS to MQTT Publisher - Bash Integration
-# Add this to your ~/.bashrc for RSS management features
-
-# RSS to MQTT aliases
-alias rss_stat='rss_status'
-alias rss_news='rss_latest'
-alias rss_list='rss_channels'
-
-# RSS help function
-rss_help_func() {
-    rss_help
-}
-
-# RSS welcome message on SSH login
-if [[ $- == *i* ]] && [[ -n "$SSH_CONNECTION" || -n "$SSH_CLIENT" ]]; then
     echo ""
-    rss_help
+    echo "╔═══════════════════════════════════════════════════════════════════════════╗"
+    echo "║         RSS & Calendar MQTT Publisher - Raspberry Pi 5                   ║"
+    echo "╚═══════════════════════════════════════════════════════════════════════════╝"
+    echo ""
     
-    # Show current RSS service status
-    if systemctl is-active --quiet rss-mqtt; then
-        echo -e "\033[0;32m✓ RSS-to-MQTT Publisher is currently running\033[0m"
-        FEEDS=$(grep -E "^https?://" ~/.newsboat/urls 2>/dev/null | wc -l)
-        echo -e "\033[0;34m  Publishing from $FEEDS RSS feeds every 6 seconds\033[0m"
+    # RSS Service Status
+    if systemctl is-active --quiet rss-mqtt.service; then
+        echo -e "  RSS Publisher:      \033[0;32m●\033[0m Running  (8 feeds + Slovak calendar)"
     else
-        echo -e "\033[0;31m✗ RSS-to-MQTT Publisher is not running\033[0m"
-        echo -e "\033[0;33m  Use 'sudo systemctl start rss-mqtt' to start\033[0m"
+        echo -e "  RSS Publisher:      \033[0;31m●\033[0m Stopped"
     fi
+    
+    # Calendar Service Status
+    if systemctl is-active --quiet gcal-mqtt.service; then
+        echo -e "  Calendar Connector: \033[0;32m●\033[0m Running  (Google Calendar via CalDAV)"
+    else
+        echo -e "  Calendar Connector: \033[0;31m●\033[0m Stopped"
+    fi
+    
+    # MQTT Broker Status
+    if systemctl is-active --quiet mosquitto.service; then
+        echo -e "  MQTT Broker:        \033[0;32m●\033[0m Running  (localhost:1883)"
+    else
+        echo -e "  MQTT Broker:        \033[0;31m●\033[0m Stopped"
+    fi
+    
+    echo ""
+    echo "  MQTT Topics:"
+    echo "    • news/*        - RSS headlines, content, source (8 feeds)"
+    echo "    • today/*       - Slovak date, time, namedays"
+    echo "    • calendar/*    - Next event, today's schedule"
+    echo ""
+    echo "  Quick Commands:"
+    echo "    rss_status      - RSS publisher status and latest news"
+    echo "    rss_channels    - List RSS feeds"
+    echo "    gcal_status     - Calendar status and next event"
+    echo "    rss_help        - Show all available commands"
+    echo ""
+    echo "  Monitor MQTT:"
+    echo "    mosquitto_sub -h localhost -t '#' -v"
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
 fi
