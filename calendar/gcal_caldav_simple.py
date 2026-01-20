@@ -17,6 +17,10 @@ from requests.auth import HTTPBasicAuth
 sys.stdout.reconfigure(line_buffering=True)
 sys.stderr.reconfigure(line_buffering=True)
 
+# Živý obraz API Configuration
+ZIVYOBRAZ_API_URL = "https://in.zivyobraz.eu/"
+ZIVYOBRAZ_IMPORT_KEY = "I5A4PqadNLn3gTiS"
+
 # MQTT Configuration
 MQTT_BROKER = "localhost"
 MQTT_PORT = 1883
@@ -39,6 +43,19 @@ MINUTE_CHECK_INTERVAL = 1  # 1 second - check for minute changes
 def log(message):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"[{timestamp}] {message}", flush=True)
+
+def push_to_zivyobraz(data):
+    """Push calendar data to Živý obraz API"""
+    try:
+        params = {'import_key': ZIVYOBRAZ_IMPORT_KEY}
+        params.update(data)
+        response = requests.get(ZIVYOBRAZ_API_URL, params=params, timeout=5)
+        if response.status_code == 200:
+            log(f"Pushed {len(data)} values to Živý obraz")
+        else:
+            log(f"Živý obraz API returned status {response.status_code}")
+    except Exception as e:
+        log(f"Error pushing to Živý obraz: {e}")
 
 def load_auth():
     """Load CalDAV URL and authentication"""
@@ -297,6 +314,22 @@ def publish_events(client, all_events):
     client.publish(MQTT_TOPIC_TOMORROW_LIST, '\n'.join(tomorrow_list) if tomorrow_list else "No appointments", retain=True)
     log(f"Published {len(tomorrow_events)} events for tomorrow")
 
+    # Push to Živý obraz API
+    zivyobraz_data = {
+        'next_title': event.get('summary', '') if event else '',
+        'next_start': format_datetime(event.get('dtstart')) if event else '',
+        'next_end': format_datetime(event.get('dtend')) if event else '',
+        'next_location': event.get('location', '') if event else '',
+        'next_description': (event.get('description', '')[:700] if event else ''),
+        'next_time_until': time_until if event else '',
+        'appt': appt_text if event else '',
+        'today_count': str(len(today_events)),
+        'today_list': '\n'.join(today_list) if today_list else "No appointments",
+        'tomorrow_count': str(len(tomorrow_events)),
+        'tomorrow_list': '\n'.join(tomorrow_list) if tomorrow_list else "No appointments"
+    }
+    push_to_zivyobraz(zivyobraz_data)
+
 def update_time_sensitive_topics(client, all_events):
     """Update only time_until and appt topics (called every minute)"""
     now = datetime.now()
@@ -323,6 +356,13 @@ def update_time_sensitive_topics(client, all_events):
 
         appt_text = event.get('summary', '') + " " + time_until
         client.publish(MQTT_TOPIC_APPT, appt_text, retain=True)
+
+        # Push time-sensitive updates to Živý obraz API (only time_until and appt)
+        zivyobraz_data = {
+            'next_time_until': time_until,
+            'appt': appt_text
+        }
+        push_to_zivyobraz(zivyobraz_data)
 
 def main():
     log("Starting Google Calendar CalDAV MQTT Connector (enhanced time format)")
