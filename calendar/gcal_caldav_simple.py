@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Google Calendar CalDAV to MQTT - Simplified iCal Parser
+Google Calendar CalDAV to MQTT - Updated with enhanced time formatting
 Fetches iCal feed via CalDAV with authentication and publishes to MQTT
 """
 
@@ -26,11 +26,13 @@ MQTT_TOPIC_NEXT_END = "calendar/next/end"
 MQTT_TOPIC_NEXT_LOCATION = "calendar/next/location"
 MQTT_TOPIC_NEXT_DESCRIPTION = "calendar/next/description"
 MQTT_TOPIC_NEXT_TIME_UNTIL = "calendar/next/time_until"
+MQTT_TOPIC_APPT = "calendar/nextappt"
 MQTT_TOPIC_TODAY_COUNT = "calendar/today/count"
 MQTT_TOPIC_TODAY_LIST = "calendar/today/list"
 MQTT_TOPIC_STATUS = "calendar/status"
 
-UPDATE_INTERVAL = 300  # 5 minutes
+UPDATE_INTERVAL = 300  # 5 minutes - calendar fetch interval
+MINUTE_CHECK_INTERVAL = 1  # 1 second - check for minute changes
 
 def log(message):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -139,21 +141,71 @@ def format_datetime(dt):
         return dt.strftime("%d.%m.%Y %H:%M")
     return str(dt)
 
-def get_time_until(start_dt):
+def get_time_until(start_dt, end_dt=None):
+    """Calculate time until event with detailed formatting"""
     if not isinstance(start_dt, datetime):
         return ""
 
     now = datetime.now()
     delta = start_dt - now
+    total_seconds = delta.total_seconds()
 
-    if delta.total_seconds() < 0:
-        return "Prebieha"
-    elif delta.total_seconds() < 3600:
-        return f"{int(delta.total_seconds() / 60)} min"
-    elif delta.total_seconds() < 86400:
-        return f"{int(delta.total_seconds() / 3600)} hod"
+    # Event is in the past or happening now
+    if total_seconds < 0:
+        # Event is currently happening
+        if end_dt and isinstance(end_dt, datetime):
+            end_delta = end_dt - now
+            if end_delta.total_seconds() > 0:
+                # Event ongoing - show time until it ends
+                minutes_left = int(end_delta.total_seconds() / 60)
+                if minutes_left < 60:
+                    return f"over in {minutes_left}m"
+                else:
+                    hours = minutes_left // 60
+                    mins = minutes_left % 60
+                    if mins > 0:
+                        return f"over in {hours}h {mins}m"
+                    else:
+                        return f"over in {hours}h"
+        return "now"
+
+    # Event is today
+    if start_dt.date() == now.date():
+        minutes = int(total_seconds / 60)
+
+        if minutes >= 120:  # 2+ hours away
+            hours = minutes // 60
+            return f"in {hours}h"
+        else:  # Less than 2 hours
+            if minutes >= 60:
+                hours = minutes // 60
+                mins = minutes % 60
+                if mins > 0:
+                    return f"in {hours}h {mins}m"
+                else:
+                    return f"in {hours}h"
+            else:
+                return f"in {minutes}m"
+
+    # Event is tomorrow or later
+    days_away = (start_dt.date() - now.date()).days
+
+    # Get day name
+    day_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    day_name = day_names[start_dt.weekday()]
+
+    # Format time if before 11am
+    time_str = ""
+    if start_dt.hour < 11:
+        time_str = f"{start_dt.strftime('%H:%M')} "
+
+    if days_away == 1:
+        if time_str:
+            return f"{time_str}tomorrow"
+        else:
+            return "tomorrow"
     else:
-        return f"{delta.days} dni"
+        return f"{time_str}on {day_name}"
 
 def publish_events(client, all_events):
     """Publish events to MQTT"""
@@ -165,15 +217,23 @@ def publish_events(client, all_events):
     # Publish next event
     if upcoming:
         event = upcoming[0]
+        time_until = get_time_until(event.get('dtstart'), event.get('dtend'))
+
         client.publish(MQTT_TOPIC_NEXT_EVENT, event.get('summary', ''), retain=True)
         client.publish(MQTT_TOPIC_NEXT_START, format_datetime(event.get('dtstart')), retain=True)
         client.publish(MQTT_TOPIC_NEXT_END, format_datetime(event.get('dtend')), retain=True)
         client.publish(MQTT_TOPIC_NEXT_LOCATION, event.get('location', ''), retain=True)
         client.publish(MQTT_TOPIC_NEXT_DESCRIPTION, event.get('description', '')[:500], retain=True)
-        client.publish(MQTT_TOPIC_NEXT_TIME_UNTIL, get_time_until(event.get('dtstart')), retain=True)
-        log(f"Published next event: {event.get('summary')}")
+        client.publish(MQTT_TOPIC_NEXT_TIME_UNTIL, time_until, retain=True)
+
+        # Publish combined appt topic
+        appt_text = event.get('summary', '') + " " + time_until
+        client.publish(MQTT_TOPIC_APPT, appt_text, retain=True)
+
+        log(f"Published next event: {event.get('summary', 'Unknown')}")
     else:
         client.publish(MQTT_TOPIC_NEXT_EVENT, "", retain=True)
+        client.publish(MQTT_TOPIC_APPT, "", retain=True)
         log("No upcoming events")
 
     # Get today's events
@@ -190,8 +250,22 @@ def publish_events(client, all_events):
     client.publish(MQTT_TOPIC_TODAY_LIST, '\n'.join(today_list) if today_list else "Žiadne udalosti dnes", retain=True)
     log(f"Published {len(today_events)} events for today")
 
+def update_time_sensitive_topics(client, all_events):
+    """Update only time_until and appt topics (called every minute)"""
+    now = datetime.now()
+    upcoming = [e for e in all_events if e.get('dtstart') and e['dtstart'] > now]
+
+    if upcoming:
+        event = upcoming[0]
+        time_until = get_time_until(event.get('dtstart'), event.get('dtend'))
+
+        client.publish(MQTT_TOPIC_NEXT_TIME_UNTIL, time_until, retain=True)
+
+        appt_text = event.get('summary', '') + " " + time_until
+        client.publish(MQTT_TOPIC_APPT, appt_text, retain=True)
+
 def main():
-    log("Starting Google Calendar CalDAV MQTT Connector (iCal parser)")
+    log("Starting Google Calendar CalDAV MQTT Connector (enhanced time format)")
 
     # Connect to MQTT
     client = mqtt.Client()
@@ -205,25 +279,40 @@ def main():
     client.loop_start()
     client.publish(MQTT_TOPIC_STATUS, "running", retain=True)
 
+    all_events = []  # Store events for minute updates
+    last_fetch_time = datetime.now() - timedelta(seconds=UPDATE_INTERVAL)  # Force immediate fetch
+    last_minute = datetime.now().minute
+
     # Main loop
     while True:
         try:
-            # Fetch and parse calendar
-            ical_data = fetch_ical()
-            if ical_data:
-                events = parse_ical_events(ical_data)
-                log(f"Parsed {len(events)} events from calendar")
-                publish_events(client, events)
-                client.publish(MQTT_TOPIC_STATUS, "running", retain=True)
-            else:
-                log("Failed to fetch calendar data")
-                client.publish(MQTT_TOPIC_STATUS, "error: fetch failed", retain=True)
+            current_time = datetime.now()
+
+            # Check if we need to fetch calendar data (every 5 minutes)
+            if (current_time - last_fetch_time).total_seconds() >= UPDATE_INTERVAL:
+                ical_data = fetch_ical()
+                if ical_data:
+                    all_events = parse_ical_events(ical_data)
+                    log(f"Parsed {len(all_events)} events from calendar")
+                    publish_events(client, all_events)
+                    client.publish(MQTT_TOPIC_STATUS, "running", retain=True)
+                    last_fetch_time = current_time
+                else:
+                    log("Failed to fetch calendar data")
+                    client.publish(MQTT_TOPIC_STATUS, "error: fetch failed", retain=True)
+
+            # Check if minute changed - update time_until and appt
+            if current_time.minute != last_minute:
+                if all_events:
+                    update_time_sensitive_topics(client, all_events)
+                last_minute = current_time.minute
+
+            time.sleep(MINUTE_CHECK_INTERVAL)
 
         except Exception as e:
             log(f"Error in main loop: {e}")
             client.publish(MQTT_TOPIC_STATUS, f"error: {str(e)}", retain=True)
-
-        time.sleep(UPDATE_INTERVAL)
+            time.sleep(60)  # Wait a bit before retrying on error
 
 if __name__ == "__main__":
     main()
