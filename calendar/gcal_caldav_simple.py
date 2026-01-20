@@ -29,6 +29,8 @@ MQTT_TOPIC_NEXT_TIME_UNTIL = "calendar/next/time_until"
 MQTT_TOPIC_APPT = "calendar/appt"
 MQTT_TOPIC_TODAY_COUNT = "calendar/today/count"
 MQTT_TOPIC_TODAY_LIST = "calendar/today/list"
+MQTT_TOPIC_TOMORROW_COUNT = "calendar/tomorrow/count"
+MQTT_TOPIC_TOMORROW_LIST = "calendar/tomorrow/list"
 MQTT_TOPIC_STATUS = "calendar/status"
 
 UPDATE_INTERVAL = 300  # 5 minutes - calendar fetch interval
@@ -141,6 +143,15 @@ def format_datetime(dt):
         return dt.strftime("%d.%m.%Y %H:%M")
     return str(dt)
 
+def format_time_range(start_dt, end_dt):
+    """Format event as time range without date"""
+    if isinstance(start_dt, datetime):
+        time_str = start_dt.strftime("%H:%M")
+        if isinstance(end_dt, datetime):
+            time_str += "-" + end_dt.strftime("%H:%M")
+        return time_str
+    return str(start_dt)
+
 def get_time_until(start_dt, end_dt=None):
     """Calculate time until event with detailed formatting"""
     if not isinstance(start_dt, datetime):
@@ -245,10 +256,26 @@ def publish_events(client, all_events):
 
     today_list = []
     for event in today_events:
-        today_list.append(f"{format_datetime(event.get('dtstart'))} - {event.get('summary', '')}")
+        time_range = format_time_range(event.get('dtstart'), event.get('dtend'))
+        today_list.append(f"{time_range}  {event.get('summary', '')}")
 
     client.publish(MQTT_TOPIC_TODAY_LIST, '\n'.join(today_list) if today_list else "Žiadne udalosti dnes", retain=True)
     log(f"Published {len(today_events)} events for today")
+
+    # Get tomorrow's events
+    tomorrow_start = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    tomorrow_end = (now + timedelta(days=1)).replace(hour=23, minute=59, second=59)
+    tomorrow_events = [e for e in all_events if e.get('dtstart') and tomorrow_start <= e['dtstart'] <= tomorrow_end]
+
+    client.publish(MQTT_TOPIC_TOMORROW_COUNT, str(len(tomorrow_events)), retain=True)
+
+    tomorrow_list = []
+    for event in tomorrow_events:
+        time_range = format_time_range(event.get('dtstart'), event.get('dtend'))
+        tomorrow_list.append(f"{time_range}  {event.get('summary', '')}")
+
+    client.publish(MQTT_TOPIC_TOMORROW_LIST, '\n'.join(tomorrow_list) if tomorrow_list else "Žiadne udalosti zajtra", retain=True)
+    log(f"Published {len(tomorrow_events)} events for tomorrow")
 
 def update_time_sensitive_topics(client, all_events):
     """Update only time_until and appt topics (called every minute)"""
