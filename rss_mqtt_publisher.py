@@ -19,6 +19,7 @@ MQTT_TOPIC_CONTENT = "news/content"
 MQTT_TOPIC_SOURCE = "news/source"
 MQTT_TOPIC_LINK = "news/link"
 MQTT_TOPIC_PUBLISH = "news/publish"
+MQTT_TOPIC_TIME = "today/time"
 
 # RSS Feeds
 RSS_FEEDS = [
@@ -36,6 +37,7 @@ RSS_FEEDS = [
 seen_articles = set()
 feed_entries_cache = {}
 current_feed_index = 0
+last_time_minute = -1
 
 def log(message):
     """Log message with timestamp"""
@@ -90,6 +92,25 @@ def on_connect(client, userdata, flags, rc):
         log("Connected to MQTT Broker")
     else:
         log(f"Failed to connect, return code {rc}")
+
+def publish_time(client):
+    """Publish current time to MQTT"""
+    current_time = datetime.now().strftime("%H:%M")
+    client.publish(MQTT_TOPIC_TIME, current_time, retain=True)
+    log(f"Published time: {current_time}")
+
+def check_and_publish_time(client):
+    """Check if minute changed and publish time"""
+    global last_time_minute
+
+    current_minute = datetime.now().minute
+
+    if current_minute != last_time_minute:
+        last_time_minute = current_minute
+        publish_time(client)
+        return True
+
+    return False
 
 def clear_old_topics(client):
     """Clear old retained messages from legacy topics"""
@@ -217,7 +238,10 @@ def main():
     # Clear old retained messages
     clear_old_topics(client)
     time.sleep(1)
-    
+
+    # Publish initial time
+    publish_time(client)
+
     # Initial fetch of all feeds
     log("Performing initial feed fetch...")
     check_for_new_articles(client)
@@ -230,17 +254,20 @@ def main():
     try:
         while True:
             current_time = time.time()
-            
+
+            # Check and publish time every second (publishes only when minute changes)
+            check_and_publish_time(client)
+
             # Check for new articles every 60 seconds
             if current_time - last_check_time >= 60:
                 new_found = check_for_new_articles(client)
                 last_check_time = current_time
-            
+
             # Rotate feeds every 6 seconds
             if current_time - last_rotation_time >= 6:
                 rotate_feeds(client)
                 last_rotation_time = current_time
-            
+
             time.sleep(1)
     
     except KeyboardInterrupt:

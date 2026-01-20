@@ -13,6 +13,7 @@ Automated RSS feed aggregator that publishes news articles to MQTT topics in rea
 - 🚀 Auto-starts on boot via systemd
 - 🧹 Clean ASCII text (no HTML, no diacritics)
 - 📝 Easy feed management commands
+- ⏰ Real-time clock updates every minute (today/time topic)
 
 ## MQTT Topics
 
@@ -23,6 +24,7 @@ All messages are published as plain text with retain flag:
 - `news/source` - Feed name and category
 - `news/link` - Article URL  
 - `news/publish` - Publication date/time
+- `today/time` - Current time (HH:MM format, updates every minute)
 
 ## Requirements
 

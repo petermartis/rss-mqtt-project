@@ -23,6 +23,7 @@ echo -e "\033[0;34m  news/content   - Article content (plain text)\033[0m"
 echo -e "\033[0;34m  news/source    - Feed name and category\033[0m"
 echo -e "\033[0;34m  news/link      - Article URL\033[0m"
 echo -e "\033[0;34m  news/publish   - Publication date\033[0m"
+echo -e "\033[0;34m  today/time     - Current time (HH:MM, updates every minute)\033[0m"
 
 echo ""
 echo -e "\033[0;36mSubscribed Feeds: $(grep -E "^https?://" ~/.newsboat/urls 2>/dev/null | wc -l)\033[0m"
