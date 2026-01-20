@@ -259,7 +259,7 @@ def publish_events(client, all_events):
         time_range = format_time_range(event.get('dtstart'), event.get('dtend'))
         today_list.append(f"{time_range}  {event.get('summary', '')}")
 
-    client.publish(MQTT_TOPIC_TODAY_LIST, '\n'.join(today_list) if today_list else "Žiadne udalosti dnes", retain=True)
+    client.publish(MQTT_TOPIC_TODAY_LIST, '\n'.join(today_list) if today_list else "No appointments", retain=True)
     log(f"Published {len(today_events)} events for today")
 
     # Get tomorrow's events
@@ -274,7 +274,7 @@ def publish_events(client, all_events):
         time_range = format_time_range(event.get('dtstart'), event.get('dtend'))
         tomorrow_list.append(f"{time_range}  {event.get('summary', '')}")
 
-    client.publish(MQTT_TOPIC_TOMORROW_LIST, '\n'.join(tomorrow_list) if tomorrow_list else "Žiadne udalosti zajtra", retain=True)
+    client.publish(MQTT_TOPIC_TOMORROW_LIST, '\n'.join(tomorrow_list) if tomorrow_list else "No appointments", retain=True)
     log(f"Published {len(tomorrow_events)} events for tomorrow")
 
 def update_time_sensitive_topics(client, all_events):
