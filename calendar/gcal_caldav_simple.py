@@ -124,9 +124,18 @@ def parse_ical_events(ical_data):
             if location_match:
                 event['location'] = location_match.group(1).strip()
 
-            description_match = re.search(r'DESCRIPTION:(.*?)$', vevent, re.MULTILINE)
+            # Extract description (can span multiple lines with continuation)
+            description_match = re.search(r'DESCRIPTION:(.*?)(?=\r?\n[A-Z]|\r?\nEND:VEVENT)', vevent, re.DOTALL)
             if description_match:
-                event['description'] = description_match.group(1).strip()
+                desc = description_match.group(1)
+                # Remove line continuations (lines starting with space)
+                desc = re.sub(r'\r?\n ', '', desc)
+                # Unescape iCal sequences
+                desc = desc.replace('\\n', '\n').replace('\\,', ',').replace('\\;', ';').replace('\\\\', '\\')
+                # Limit to 700 characters
+                if len(desc) > 700:
+                    desc = desc[:700] + '...'
+                event['description'] = desc.strip()
 
             if event.get('dtstart'):
                 events.append(event)
