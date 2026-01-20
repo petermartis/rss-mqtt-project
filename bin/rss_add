@@ -1,0 +1,36 @@
+#!/bin/bash
+
+if [ $# -lt 1 ]; then
+    echo ""
+    echo -e "\033[0;31mError: RSS feed URL required\033[0m"
+    echo ""
+    echo -e "\033[0;36mUsage:\033[0m"
+    echo -e "  rss_add <URL> [category] [name]"
+    echo ""
+    echo -e "\033[0;36mExample:\033[0m"
+    echo -e "  rss_add https://example.com/rss \"Tech\" \"Example Site\""
+    echo ""
+    exit 1
+fi
+
+URL=$1
+CATEGORY=${2:-"General"}
+NAME=${3:-""}
+
+mkdir -p ~/.newsboat
+
+if [[ -n "$NAME" ]]; then
+    echo "$URL \"$CATEGORY\" \"$NAME\"" >> ~/.newsboat/urls
+else
+    echo "$URL \"$CATEGORY\"" >> ~/.newsboat/urls
+fi
+
+echo ""
+echo -e "\033[0;32m✓ Added RSS feed:\033[0m"
+echo -e "\033[0;34m  URL: $URL\033[0m"
+echo -e "\033[0;36m  Category: $CATEGORY\033[0m"
+[[ -n "$NAME" ]] && echo -e "\033[0;36m  Name: $NAME\033[0m"
+echo ""
+echo -e "\033[0;33m⚠ Restart RSS service to apply changes:\033[0m"
+echo -e "  sudo systemctl restart rss-mqtt"
+echo ""

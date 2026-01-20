@@ -1,0 +1,22 @@
+#!/bin/bash
+echo ""
+echo -e "\033[0;35m════════════════════════════════════════════════════════════════\033[0m"
+echo -e "\033[0;35m                    📰 LATEST RSS NEWS 📰                        \033[0m"
+echo -e "\033[0;35m════════════════════════════════════════════════════════════════\033[0m"
+echo ""
+
+headline=$(timeout 2 mosquitto_sub -h localhost -t 'news/headline' -C 1 2>/dev/null)
+source=$(timeout 2 mosquitto_sub -h localhost -t 'news/source' -C 1 2>/dev/null)
+link=$(timeout 2 mosquitto_sub -h localhost -t 'news/link' -C 1 2>/dev/null)
+
+if [[ -n "$headline" ]]; then
+    echo -e "\033[0;32mHeadline:\033[0m $headline"
+    [[ -n "$source" ]] && echo -e "\033[0;32mSource:\033[0m   $source"
+    [[ -n "$link" ]] && echo -e "\033[0;32mLink:\033[0m     $link"
+else
+    echo -e "\033[0;31mNo news available\033[0m"
+fi
+
+echo ""
+echo -e "\033[0;35m════════════════════════════════════════════════════════════════\033[0m"
+echo ""

@@ -1,0 +1,30 @@
+#\!/bin/bash
+echo ""
+echo -e "\033[0;35m════════════════════════════════════════════════════════════════\033[0m"
+echo -e "\033[0;35m                    📰 RSS TO MQTT STATUS 📰                     \033[0m"
+echo -e "\033[0;35m════════════════════════════════════════════════════════════════\033[0m"
+
+if systemctl is-active --quiet rss-mqtt; then
+    echo -e "\033[0;32m✓ RSS-to-MQTT Publisher is running\033[0m"
+    UPTIME=$(systemctl show rss-mqtt --property=ActiveEnterTimestamp --value)
+    if [[ -n "$UPTIME" ]]; then
+        UPTIME_FORMATTED=$(date -d "$UPTIME" +'%Y-%m-%d %H:%M:%S')
+        echo -e "\033[0;34m  Started: $UPTIME_FORMATTED\033[0m"
+    fi
+else
+    echo -e "\033[0;31m✗ RSS-to-MQTT Publisher is not running\033[0m"
+    echo -e "\033[0;33m  Use 'sudo systemctl start rss-mqtt' to start\033[0m"
+fi
+
+echo ""
+echo -e "\033[0;36mMQTT Topics:\033[0m"
+echo -e "\033[0;34m  news/headline  - Article headlines (plain text)\033[0m"
+echo -e "\033[0;34m  news/content   - Article content (plain text)\033[0m"
+echo -e "\033[0;34m  news/source    - Feed name and category\033[0m"
+echo -e "\033[0;34m  news/link      - Article URL\033[0m"
+echo -e "\033[0;34m  news/publish   - Publication date\033[0m"
+
+echo ""
+echo -e "\033[0;36mSubscribed Feeds: $(grep -E "^https?://" ~/.newsboat/urls 2>/dev/null | wc -l)\033[0m"
+echo -e "\033[0;35m════════════════════════════════════════════════════════════════\033[0m"
+echo ""

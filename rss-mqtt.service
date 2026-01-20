@@ -1,0 +1,15 @@
+[Unit]
+Description=RSS to MQTT Publisher
+After=network.target mosquitto.service
+Wants=mosquitto.service
+
+[Service]
+Type=simple
+User=admin
+WorkingDirectory=/home/admin
+ExecStart=/usr/bin/python3 /home/admin/rss_mqtt_publisher.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

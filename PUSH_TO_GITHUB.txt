@@ -1,0 +1,55 @@
+═══════════════════════════════════════════════════════════════
+   QUICK START: Push Your RSS-MQTT Project to GitHub
+═══════════════════════════════════════════════════════════════
+
+Your project is ready at: ~/rss-mqtt-project
+
+STEP 1: Configure Git on Raspberry Pi
+═══════════════════════════════════════════════════════════════
+cd ~/rss-mqtt-project
+git config user.name "YOUR_GITHUB_USERNAME"
+git config user.email "your.email@example.com"
+git add .
+git commit -m "Initial commit: RSS to MQTT Publisher"
+
+STEP 2: Create Private Repository on GitHub
+═══════════════════════════════════════════════════════════════
+1. Visit: https://github.com/new
+2. Name: rss-mqtt-publisher
+3. Privacy: PRIVATE
+4. DO NOT add README, .gitignore, or license
+5. Click "Create repository"
+
+STEP 3: Push to GitHub
+═══════════════════════════════════════════════════════════════
+git remote add origin https://github.com/YOUR_USERNAME/rss-mqtt-publisher.git
+git branch -M main
+git push -u origin main
+
+(If you have 2FA, you'll need a Personal Access Token as password)
+
+STEP 4: Verify
+═══════════════════════════════════════════════════════════════
+Visit: https://github.com/YOUR_USERNAME/rss-mqtt-publisher
+
+✓ You should see all 15 files uploaded!
+
+FUTURE: Clone on Another Raspberry Pi
+═══════════════════════════════════════════════════════════════
+git clone https://github.com/YOUR_USERNAME/rss-mqtt-publisher.git
+cd rss-mqtt-publisher
+chmod +x install.sh
+sudo ./install.sh
+
+BACKUP: Save Configuration Changes
+═══════════════════════════════════════════════════════════════
+cd ~/rss-mqtt-project
+cp ~/.newsboat/urls feeds.txt
+cp ~/rss_mqtt_publisher.py .
+git add .
+git commit -m "Updated configuration"
+git push
+
+═══════════════════════════════════════════════════════════════
+For detailed instructions, see GITHUB_SETUP.md
+═══════════════════════════════════════════════════════════════

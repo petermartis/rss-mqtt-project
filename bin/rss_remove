@@ -1,0 +1,52 @@
+#!/bin/bash
+
+if [ $# -lt 1 ]; then
+    echo ""
+    echo -e "\033[0;31mError: RSS feed URL pattern required\033[0m"
+    echo ""
+    echo -e "\033[0;36mUsage:\033[0m"
+    echo -e "  rss_remove <URL_pattern>"
+    echo ""
+    echo -e "\033[0;36mExample:\033[0m"
+    echo -e "  rss_remove techcrunch.com"
+    echo ""
+    exit 1
+fi
+
+PATTERN=$1
+
+if [ ! -f ~/.newsboat/urls ]; then
+    echo ""
+    echo -e "\033[0;31mNo RSS channels configured\033[0m"
+    echo ""
+    exit 1
+fi
+
+MATCHES=$(grep -n "$PATTERN" ~/.newsboat/urls)
+
+if [ -z "$MATCHES" ]; then
+    echo ""
+    echo -e "\033[0;31mNo feeds matching '$PATTERN' found\033[0m"
+    echo ""
+    exit 1
+fi
+
+echo ""
+echo -e "\033[0;33mFound matching feeds:\033[0m"
+echo "$MATCHES"
+echo ""
+read -p "Remove these feeds? (y/N): " confirm
+
+if [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]]; then
+    sed -i "/$PATTERN/d" ~/.newsboat/urls
+    echo ""
+    echo -e "\033[0;32m✓ Removed feeds matching '$PATTERN'\033[0m"
+    echo ""
+    echo -e "\033[0;33m⚠ Restart RSS service to apply changes:\033[0m"
+    echo -e "  sudo systemctl restart rss-mqtt"
+    echo ""
+else
+    echo ""
+    echo -e "\033[0;33mCancelled\033[0m"
+    echo ""
+fi

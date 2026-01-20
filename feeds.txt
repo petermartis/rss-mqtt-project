@@ -1,0 +1,11 @@
+# Top Tech RSS Feeds
+https://techcrunch.com/feed/ "Tech" "TechCrunch"
+https://www.theverge.com/rss/index.xml "Tech" "The Verge"
+https://www.wired.com/feed/rss "Tech" "Wired"
+https://arstechnica.com/feed/ "Tech" "Ars Technica"
+https://www.engadget.com/rss.xml "Tech" "Engadget"
+
+# Top International News Feeds
+https://feeds.bbci.co.uk/news/world/rss.xml "News" "BBC World"
+http://rss.cnn.com/rss/edition.rss "News" "CNN International"
+https://www.aljazeera.com/xml/rss/all.xml "News" "Al Jazeera"
