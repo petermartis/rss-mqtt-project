@@ -224,3 +224,49 @@ Pull requests welcome! Please ensure:
 - Code follows existing style
 - Test on Raspberry Pi before submitting
 - Update documentation as needed
+
+## Google Calendar Integration
+
+The project includes a Google Calendar connector that publishes upcoming events to MQTT topics. This works with Google Workspace (G Suite) accounts.
+
+### Features
+
+- **Next Event**: Publishes details about your next upcoming calendar event
+- **Today's Schedule**: Shows count and list of today's events
+- **Auto-refresh**: Updates every 5 minutes
+- **Retained Messages**: All calendar data is retained for immediate delivery
+- **OAuth2 Authentication**: Secure readonly access to your calendar
+
+### MQTT Topics
+
+**Next Event** (all retained):
+- `calendar/next/title` - Event title
+- `calendar/next/start` - Start time (DD.MM.YYYY HH:MM)
+- `calendar/next/end` - End time
+- `calendar/next/location` - Event location
+- `calendar/next/description` - Event description
+- `calendar/next/attendees` - List of attendees
+- `calendar/next/time_until` - Time until event (e.g., "45 min", "2 hod")
+
+**Today** (all retained):
+- `calendar/today/count` - Number of events today
+- `calendar/today/list` - List of today's events
+
+**Status**:
+- `calendar/status` - Connector status
+
+### Setup
+
+See [calendar/GCAL_SETUP.md](calendar/GCAL_SETUP.md) for complete setup instructions.
+
+Quick setup:
+1. Create Google Cloud project and enable Calendar API
+2. Create OAuth 2.0 credentials (Desktop app)
+3. Download credentials to `~/gcal_credentials.json`
+4. Run `gcal_authenticate` to authenticate
+5. Run `sudo systemctl start gcal-mqtt.service`
+
+### Commands
+
+- `gcal_status` - Show calendar status and next event
+- `gcal_authenticate` - Set up Google OAuth authentication

@@ -1,0 +1,15 @@
+[Unit]
+Description=Google Calendar to MQTT Connector
+After=network.target mosquitto.service
+Wants=mosquitto.service
+
+[Service]
+Type=simple
+User=admin
+WorkingDirectory=/home/admin
+ExecStart=/usr/bin/python3 /home/admin/gcal_mqtt_connector.py
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

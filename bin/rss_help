@@ -9,6 +9,8 @@ echo "  rss_channels - List all subscribed RSS feeds"
 echo "  rss_add      - Add new RSS feed"
 echo "  rss_remove   - Remove RSS feed"
 echo "  rss_help     - Show this help message"
+  gcal_status      - Show Google Calendar status
+  gcal_authenticate - Set up Google Calendar OAuth
 echo ""
 echo -e "\033[1;36mMQTT Topics:\033[0m"
 echo ""

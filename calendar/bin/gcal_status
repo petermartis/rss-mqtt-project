@@ -1,0 +1,67 @@
+#!/bin/bash
+
+echo -e "\n=== Google Calendar MQTT Connector Status ==="
+echo ""
+
+# Service status
+if systemctl is-active --quiet gcal-mqtt.service; then
+    echo -e "Service: \033[0;32mRunning\033[0m"
+    uptime=$(systemctl show gcal-mqtt.service --property=ActiveEnterTimestamp --value)
+    echo "Started: $uptime"
+else
+    echo -e "Service: \033[0;31mStopped\033[0m"
+fi
+
+echo ""
+
+# Check authentication
+if [ -f "/home/admin/.gcal_token.pickle" ]; then
+    echo -e "Authentication: \033[0;32mConfigured\033[0m"
+else
+    echo -e "Authentication: \033[0;31mNot configured\033[0m"
+    echo "Run: gcal_authenticate"
+fi
+
+echo ""
+echo "=== MQTT Topics ==="
+echo ""
+
+# Calendar status
+status=$(timeout 1 mosquitto_sub -h localhost -t 'calendar/status' -C 1 2>/dev/null)
+echo "Status: ${status:-unknown}"
+
+echo ""
+echo -e "\033[1;36mNext Event:\033[0m"
+next_event=$(timeout 1 mosquitto_sub -h localhost -t 'calendar/next/title' -C 1 2>/dev/null)
+next_start=$(timeout 1 mosquitto_sub -h localhost -t 'calendar/next/start' -C 1 2>/dev/null)
+next_until=$(timeout 1 mosquitto_sub -h localhost -t 'calendar/next/time_until' -C 1 2>/dev/null)
+next_location=$(timeout 1 mosquitto_sub -h localhost -t 'calendar/next/location' -C 1 2>/dev/null)
+
+if [ -n "$next_event" ]; then
+    echo "  Title: $next_event"
+    echo "  Start: $next_start"
+    echo "  Time until: $next_until"
+    [ -n "$next_location" ] && echo "  Location: $next_location"
+else
+    echo "  No upcoming events"
+fi
+
+echo ""
+echo -e "\033[1;36mToday:\033[0m"
+today_count=$(timeout 1 mosquitto_sub -h localhost -t 'calendar/today/count' -C 1 2>/dev/null)
+echo "  Events today: ${today_count:-0}"
+
+echo ""
+echo -e "\033[1;36mAvailable Topics:\033[0m"
+echo "  calendar/status           - Connector status"
+echo "  calendar/next/title       - Next event title"
+echo "  calendar/next/start       - Next event start time"
+echo "  calendar/next/end         - Next event end time"
+echo "  calendar/next/location    - Next event location"
+echo "  calendar/next/description - Next event description"
+echo "  calendar/next/attendees   - Next event attendees"
+echo "  calendar/next/time_until  - Time until next event"
+echo "  calendar/today/count      - Number of events today"
+echo "  calendar/today/list       - List of today's events"
+
+echo ""
