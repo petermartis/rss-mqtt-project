@@ -231,12 +231,23 @@ def publish_events(client, all_events):
     """Publish events to MQTT"""
     now = datetime.now()
 
+    # First check for ongoing events (started but not ended)
+    ongoing = [e for e in all_events if e.get('dtstart') and e.get('dtend') and
+               isinstance(e['dtstart'], datetime) and isinstance(e['dtend'], datetime) and
+               e['dtstart'] <= now < e['dtend']]
+
     # Get upcoming events
     upcoming = [e for e in all_events if e.get('dtstart') and e['dtstart'] > now]
 
-    # Publish next event
-    if upcoming:
+    # Prioritize ongoing events, then upcoming
+    event = None
+    if ongoing:
+        event = ongoing[0]  # Show the first ongoing event
+    elif upcoming:
         event = upcoming[0]
+
+    # Publish next event
+    if event:
         time_until = get_time_until(event.get('dtstart'), event.get('dtend'))
 
         client.publish(MQTT_TOPIC_NEXT_EVENT, event.get('summary', ''), retain=True)
@@ -289,10 +300,23 @@ def publish_events(client, all_events):
 def update_time_sensitive_topics(client, all_events):
     """Update only time_until and appt topics (called every minute)"""
     now = datetime.now()
+
+    # First check for ongoing events (started but not ended)
+    ongoing = [e for e in all_events if e.get('dtstart') and e.get('dtend') and
+               isinstance(e['dtstart'], datetime) and isinstance(e['dtend'], datetime) and
+               e['dtstart'] <= now < e['dtend']]
+
+    # Get upcoming events
     upcoming = [e for e in all_events if e.get('dtstart') and e['dtstart'] > now]
 
-    if upcoming:
+    # Prioritize ongoing events, then upcoming
+    event = None
+    if ongoing:
+        event = ongoing[0]
+    elif upcoming:
         event = upcoming[0]
+
+    if event:
         time_until = get_time_until(event.get('dtstart'), event.get('dtend'))
 
         client.publish(MQTT_TOPIC_NEXT_TIME_UNTIL, time_until, retain=True)
