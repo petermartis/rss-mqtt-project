@@ -9,6 +9,7 @@ import sys
 import time
 import paho.mqtt.client as mqtt
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 import re
 import os
 import requests
@@ -98,21 +99,42 @@ def fetch_ical():
         return None
 
 def parse_datetime(dt_str):
-    """Parse iCal datetime string"""
+    """Parse iCal datetime string with proper timezone handling"""
     try:
-        # Remove timezone info for simplicity
-        dt_str = dt_str.split(';')[0].replace('TZID=', '').split(':')[-1]
+        # Extract timezone ID if present (e.g., TZID=Europe/Prague:20260123T153000)
+        tzid = None
+        if 'TZID=' in dt_str:
+            parts = dt_str.split(':', 1)
+            if len(parts) == 2:
+                tzid_part = parts[0]
+                dt_str = parts[1]
+                # Extract timezone name
+                tzid = tzid_part.split('TZID=')[1]
 
+        # Handle datetime with timezone marker 'Z' (UTC)
         if 'T' in dt_str:
-            # DateTime
-            if 'Z' in dt_str:
-                return datetime.strptime(dt_str, "%Y%m%dT%H%M%SZ")
+            if dt_str.endswith('Z'):
+                # UTC time
+                dt = datetime.strptime(dt_str, "%Y%m%dT%H%M%SZ")
+                dt = dt.replace(tzinfo=ZoneInfo('UTC'))
             else:
-                return datetime.strptime(dt_str, "%Y%m%dT%H%M%S")
+                # Local or timezone-specific time
+                dt = datetime.strptime(dt_str, "%Y%m%dT%H%M%S")
+                if tzid:
+                    # Apply the extracted timezone
+                    dt = dt.replace(tzinfo=ZoneInfo(tzid))
+                else:
+                    # Assume local timezone if no timezone specified
+                    dt = dt.replace(tzinfo=ZoneInfo('localtime'))
+
+            # Convert to local timezone and return as naive datetime
+            local_dt = dt.astimezone(ZoneInfo('localtime'))
+            return local_dt.replace(tzinfo=None)
         else:
-            # Date only
+            # Date only (all-day event)
             return datetime.strptime(dt_str, "%Y%m%d")
-    except:
+    except Exception as e:
+        log(f"Error parsing datetime '{dt_str}': {e}")
         return None
 
 def parse_ical_events(ical_data):
